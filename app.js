@@ -1,8 +1,9 @@
 "use strict";
 
-let gl; // WebGL context
-let vertices; // vertices of the quad
+let gl;
+let vertices;
 let colors;
+const delta = 0.04;
 
 window.onload = () => {
     let canvas = document.getElementById("gl-canvas");
@@ -11,25 +12,27 @@ window.onload = () => {
     if (!gl) alert("WebGL 2.0 isn't available");
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.2, 0.3, 0.1, 1.0);
+    gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
 
-    const delta = 0.04;
+    const ghost = GHOST(
+        Math.random() * 10,
+        Math.random() * 10,
+        vec4(Math.random(), Math.random(), Math.random(), 1.0)
+    );
 
+    vertices = ghost.vertices;
+    colors = ghost.colors;
+
+    render();
+};
+
+const GHOST = (x, y, c) => {
     ////////////////// EYES //////////////////
 
-    const left_iris = {
-        vertices: [vec2(0.0, 0.0), vec2(1, 0.0), vec2(0.0, 1), vec2(1, 1)],
-
-        colors: [
-            vec4(0.0, 0.0, 0.0, 1.0),
-            vec4(0.0, 0.0, 0.0, 1.0),
-            vec4(0.0, 0.0, 0.0, 1.0),
-            vec4(0.0, 0.0, 0.0, 1.0),
-        ],
-    };
-
-    const left_eyeball = {
+    const balls = {
         vertices: [
+            // left ball
+
             vec2(0, 2),
             vec2(1, 2),
             vec2(-1, 2),
@@ -42,55 +45,38 @@ window.onload = () => {
             vec2(-2, -1),
             vec2(0, -1),
             vec2(1, -1),
+
+            // right ball
+
+            vec2(6, 2),
+            vec2(7, 2),
+            vec2(5, 2),
+            vec2(4, 2),
+            vec2(5, 1),
+            vec2(4, 1),
+            vec2(5, 0),
+            vec2(4, 0),
+            vec2(5, -1),
+            vec2(4, -1),
+            vec2(6, -1),
+            vec2(7, -1),
         ],
-        colors: [
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-            vec4(1.0, 1.0, 1.0, 1.0),
-        ],
-    };
-
-    const right_eyeball = {
-        vertices: [],
-        colors: left_eyeball.colors,
-    };
-
-    const right_iris = {
-        vertices: [],
-        colors: left_iris.colors,
-    };
-
-    var i;
-
-    for (i = 0; i < left_eyeball.vertices.length; ++i) {
-        const left_ball_pos = left_eyeball.vertices[i];
-        right_eyeball.vertices[i] = vec2(
-            left_ball_pos[0] + 6,
-            left_ball_pos[1]
-        );
-    }
-    for (i = 0; i < left_iris.vertices.length; ++i) {
-        const left_iris_pos = left_iris.vertices[i];
-        right_iris.vertices[i] = vec2(left_iris_pos[0] + 6, left_iris_pos[1]);
-    }
-
-    const balls = {
-        vertices: left_eyeball.vertices.concat(right_eyeball.vertices),
-        colors: left_eyeball.colors.concat(right_eyeball.colors),
+        colors: Array.from({ length: 24 }, (v, i) => vec4(1.0, 1.0, 1.0, 1.0)),
     };
 
     const irises = {
-        vertices: left_iris.vertices.concat(right_iris.vertices),
-        colors: left_iris.colors.concat(right_iris.colors),
+        vertices: [
+            vec2(0, 0),
+            vec2(1, 0),
+            vec2(0, 1),
+            vec2(1, 1),
+            vec2(6, 0),
+            vec2(7, 0),
+            vec2(6, 1),
+            vec2(7, 1),
+        ],
+
+        colors: Array.from({ length: 8 }, (v, i) => vec4(0.0, 0.0, 0.0, 1.0)),
     };
 
     const eyes = {
@@ -145,17 +131,13 @@ window.onload = () => {
         vec3(7, 8, -6),
     ];
 
-    for (i = 0; i < level.length; ++i) {
+    for (var i = 0; i < level.length; ++i) {
         const lev = level[i];
 
         face.vertices = face.vertices.concat(strech(lev[0], lev[1], lev[2]));
     }
 
-    console.log(face);
-
-    for (var i = 0; i < face.vertices.length; ++i) {
-        face.colors.push(vec4(1.0, 0.0, 0.0, 1.0));
-    }
+    face.colors = Array.from({ length: face.vertices.length }, (v, i) => c);
 
     ////////////////// GHOST //////////////////
 
@@ -164,17 +146,11 @@ window.onload = () => {
         colors: face.colors.concat(eyes.colors),
     };
 
-    ////////////////// END //////////////////
+    ghost.vertices = ghost.vertices.map((v) => {
+        return vec2((v[0] + x) * delta, (v[1] + y) * delta);
+    });
 
-    vertices = flatten(ghost.vertices);
-
-    for (i = 0; i < vertices.length; ++i) {
-        vertices[i] *= delta;
-    }
-
-    colors = ghost.colors;
-
-    render();
+    return ghost;
 };
 
 const strech = (xmin, xmax, y) => {
@@ -184,12 +160,13 @@ const strech = (xmin, xmax, y) => {
     }
     return result;
 };
+
 const render = () => {
     let program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
 
     let vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
@@ -203,5 +180,5 @@ const render = () => {
     gl.enableVertexAttribArray(vColor);
 
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.POINTS, 0, vertices.length / 2);
+    gl.drawArrays(gl.POINTS, 0, vertices.length);
 };
