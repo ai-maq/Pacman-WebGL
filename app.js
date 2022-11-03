@@ -3,7 +3,11 @@
 let gl;
 let vertices;
 let colors;
+let shift = -30;
+const speed = 0.15;
 const delta = 0.04;
+
+// make gl point size changable
 
 window.onload = () => {
     let canvas = document.getElementById("gl-canvas");
@@ -13,15 +17,6 @@ window.onload = () => {
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
-
-    const ghost = GHOST(
-        Math.random() * 10,
-        Math.random() * 10,
-        vec4(Math.random(), Math.random(), Math.random(), 1.0)
-    );
-
-    vertices = ghost.vertices;
-    colors = ghost.colors;
 
     render();
 };
@@ -162,6 +157,11 @@ const strech = (xmin, xmax, y) => {
 };
 
 const render = () => {
+    const ghost = GHOST(shift, 0, vec4(1.0, 0.0, 0.0, 1.0));
+
+    vertices = ghost.vertices;
+    colors = ghost.colors;
+
     let program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
@@ -181,4 +181,12 @@ const render = () => {
 
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, vertices.length);
+
+    shift += speed;
+
+    if (shift > 30) {
+        shift = -30;
+    }
+
+    window.requestAnimationFrame(render);
 };
