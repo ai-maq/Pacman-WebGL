@@ -16,7 +16,8 @@ window.onload = () => {
     if (!gl) alert("WebGL 2.0 isn't available");
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
+    // gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     render();
 };
@@ -148,6 +149,52 @@ const GHOST = (x, y, c) => {
     return ghost;
 };
 
+const PACMAN = (x, y) => {
+    const pacman = {
+        vertices: [],
+        colors: [],
+    };
+
+    const level = [
+        vec3(-5, -2, 0),
+
+        vec3(-5, 1, 1),
+        vec3(-5, 1, -1),
+
+        vec3(-5, 4, 2),
+        vec3(-5, 4, -2),
+
+        vec3(-4, 6, 3),
+        vec3(-4, 6, -3),
+
+        vec3(-4, 6, 4),
+        vec3(-4, 6, -4),
+
+        vec3(-3, 5, 5),
+        vec3(-3, 5, -5),
+
+        vec3(-1, 3, 6),
+        vec3(-1, 3, -6),
+    ];
+
+    for (var i = 0; i < level.length; ++i) {
+        const lev = level[i];
+        pacman.vertices = pacman.vertices.concat(
+            strech(lev[0], lev[1], lev[2])
+        );
+    }
+
+    pacman.colors = Array.from({ length: pacman.vertices.length }, (v, i) =>
+        vec4(1.0, 1.0, 0.0, 1.0)
+    );
+
+    pacman.vertices = pacman.vertices.map((v) => {
+        return vec2((v[0] + x) * delta, (v[1] + y) * delta);
+    });
+
+    return pacman;
+};
+
 const strech = (xmin, xmax, y) => {
     let result = [];
     for (var i = xmin; i <= xmax; ++i) {
@@ -158,9 +205,10 @@ const strech = (xmin, xmax, y) => {
 
 const render = () => {
     const ghost = GHOST(shift, 0, vec4(1.0, 0.0, 0.0, 1.0));
+    const pacman = PACMAN(shift + 25, 0);
 
-    vertices = ghost.vertices;
-    colors = ghost.colors;
+    vertices = ghost.vertices.concat(pacman.vertices);
+    colors = ghost.colors.concat(pacman.colors);
 
     let program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
