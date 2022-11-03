@@ -1,13 +1,17 @@
 "use strict";
 
-let gl;
-let vertices;
-let colors;
-let shift = -30;
-const speed = 0.15;
-const delta = 0.04;
+let gl; // WebGL context
+let vertices = []; // array of all vertices
+let colors = []; // array of all colors
+let shift = -33; // initial shift of pacman
+let mouth_open = true; // is pacman mouth open
+let count = 0; // counter for mouth opening
 
-// make gl point size changable
+const speed = 0.25; // speed of pacman
+const delta = 0.04; // distance between two points
+const RED = vec4(1.0, 0.0, 0.0, 1.0); // red color
+const GREEN = vec4(0.0, 1.0, 0.0, 1.0); // green color
+const BLUE = vec4(0.0, 0.0, 1.0, 1.0); // blue color
 
 window.onload = () => {
     let canvas = document.getElementById("gl-canvas");
@@ -16,185 +20,18 @@ window.onload = () => {
     if (!gl) alert("WebGL 2.0 isn't available");
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    // gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     render();
 };
 
-const GHOST = (x, y, c) => {
-    ////////////////// EYES //////////////////
-
-    const balls = {
-        vertices: [
-            // left ball
-
-            vec2(0, 2),
-            vec2(1, 2),
-            vec2(-1, 2),
-            vec2(-2, 2),
-            vec2(-1, 1),
-            vec2(-2, 1),
-            vec2(-1, 0),
-            vec2(-2, 0),
-            vec2(-1, -1),
-            vec2(-2, -1),
-            vec2(0, -1),
-            vec2(1, -1),
-
-            // right ball
-
-            vec2(6, 2),
-            vec2(7, 2),
-            vec2(5, 2),
-            vec2(4, 2),
-            vec2(5, 1),
-            vec2(4, 1),
-            vec2(5, 0),
-            vec2(4, 0),
-            vec2(5, -1),
-            vec2(4, -1),
-            vec2(6, -1),
-            vec2(7, -1),
-        ],
-        colors: Array.from({ length: 24 }, (v, i) => vec4(1.0, 1.0, 1.0, 1.0)),
-    };
-
-    const irises = {
-        vertices: [
-            vec2(0, 0),
-            vec2(1, 0),
-            vec2(0, 1),
-            vec2(1, 1),
-            vec2(6, 0),
-            vec2(7, 0),
-            vec2(6, 1),
-            vec2(7, 1),
-        ],
-
-        colors: Array.from({ length: 8 }, (v, i) => vec4(0.0, 0.0, 0.0, 1.0)),
-    };
-
-    const eyes = {
-        vertices: balls.vertices.concat(irises.vertices),
-        colors: balls.colors.concat(irises.colors),
-    };
-
-    ////////////////// FACE //////////////////
-
-    const face = {
-        vertices: [
-            vec2(2, 2),
-            vec2(2, 1),
-            vec2(2, 0),
-            vec2(2, -1),
-            vec2(3, 2),
-            vec2(3, 1),
-            vec2(3, 0),
-            vec2(3, -1),
-            vec2(8, 2),
-            vec2(8, 1),
-            vec2(8, 0),
-            vec2(8, -1),
-            vec2(9, 1),
-            vec2(9, 0),
-            vec2(9, -1),
-            vec2(-3, 2),
-            vec2(-3, 1),
-            vec2(-3, 0),
-            vec2(-3, -1),
-            vec2(-4, 1),
-            vec2(-4, 0),
-            vec2(-4, -1),
-        ],
-        colors: [],
-    };
-
-    const level = [
-        vec3(-3, 8, 3),
-        vec3(-3, 8, 4),
-        vec3(-2, 7, 5),
-        vec3(-1, 6, 6),
-        vec3(1, 4, 7),
-        vec3(-4, 9, -2),
-        vec3(-4, 9, -3),
-        vec3(-4, 9, -4),
-        vec3(-4, -1, -5),
-        vec3(1, 4, -5),
-        vec3(6, 9, -5),
-        vec3(-3, -2, -6),
-        vec3(2, 3, -6),
-        vec3(7, 8, -6),
-    ];
-
-    for (var i = 0; i < level.length; ++i) {
-        const lev = level[i];
-
-        face.vertices = face.vertices.concat(strech(lev[0], lev[1], lev[2]));
-    }
-
-    face.colors = Array.from({ length: face.vertices.length }, (v, i) => c);
-
-    ////////////////// GHOST //////////////////
-
-    const ghost = {
-        vertices: face.vertices.concat(eyes.vertices),
-        colors: face.colors.concat(eyes.colors),
-    };
-
-    ghost.vertices = ghost.vertices.map((v) => {
-        return vec2((v[0] + x) * delta, (v[1] + y) * delta);
-    });
-
-    return ghost;
-};
-
-const PACMAN = (x, y) => {
-    const pacman = {
-        vertices: [],
-        colors: [],
-    };
-
-    const level = [
-        vec3(-5, -2, 0),
-
-        vec3(-5, 1, 1),
-        vec3(-5, 1, -1),
-
-        vec3(-5, 4, 2),
-        vec3(-5, 4, -2),
-
-        vec3(-4, 6, 3),
-        vec3(-4, 6, -3),
-
-        vec3(-4, 6, 4),
-        vec3(-4, 6, -4),
-
-        vec3(-3, 5, 5),
-        vec3(-3, 5, -5),
-
-        vec3(-1, 3, 6),
-        vec3(-1, 3, -6),
-    ];
-
-    for (var i = 0; i < level.length; ++i) {
-        const lev = level[i];
-        pacman.vertices = pacman.vertices.concat(
-            strech(lev[0], lev[1], lev[2])
-        );
-    }
-
-    pacman.colors = Array.from({ length: pacman.vertices.length }, (v, i) =>
-        vec4(1.0, 1.0, 0.0, 1.0)
-    );
-
-    pacman.vertices = pacman.vertices.map((v) => {
-        return vec2((v[0] + x) * delta, (v[1] + y) * delta);
-    });
-
-    return pacman;
-};
-
+/**
+ * all the points between xmin, xmax at the height of y
+ * @param {Number} xmin
+ * @param {Number} xmax
+ * @param {Number} y
+ * @returns {Array} array of points
+ */
 const strech = (xmin, xmax, y) => {
     let result = [];
     for (var i = xmin; i <= xmax; ++i) {
@@ -203,12 +40,53 @@ const strech = (xmin, xmax, y) => {
     return result;
 };
 
+/**
+ * render the scene
+ */
 const render = () => {
-    const ghost = GHOST(shift, 0, vec4(1.0, 0.0, 0.0, 1.0));
-    const pacman = PACMAN(shift + 25, 0);
+    vertices = [];
+    colors = [];
 
-    vertices = ghost.vertices.concat(pacman.vertices);
-    colors = ghost.colors.concat(pacman.colors);
+    const ghostBLUE = GHOST(shift - 75, 0, BLUE);
+    const ghostGREEN = GHOST(shift - 50, 0, GREEN);
+    const ghostRED = GHOST(shift - 25, 0, RED);
+    const pacman = PACMAN(shift, 0, mouth_open);
+
+    const seeds = [
+        vec2(-20, 0),
+        vec2(-15, 0),
+        vec2(-10, 0),
+        vec2(-5, 0),
+        vec2(0, 0),
+        vec2(5, 0),
+        vec2(10, 0),
+        vec2(15, 0),
+        vec2(20, 0),
+    ];
+
+    for (var i = 0; i < seeds.length; ++i) {
+        if (seeds[i][0] > 5 + shift) {
+            vertices.push(seeds[i]);
+        }
+    }
+
+    colors = Array.from({ length: vertices.length }, (v, i) =>
+        vec4(1.0, 0.2, 0.1, 1.0)
+    );
+
+    vertices = vertices.concat(pacman.vertices);
+    vertices = vertices.concat(ghostRED.vertices);
+    vertices = vertices.concat(ghostGREEN.vertices);
+    vertices = vertices.concat(ghostBLUE.vertices);
+
+    vertices = vertices.map((v) => {
+        return vec2(v[0] * delta, v[1] * delta);
+    });
+
+    colors = colors.concat(pacman.colors);
+    colors = colors.concat(ghostRED.colors);
+    colors = colors.concat(ghostGREEN.colors);
+    colors = colors.concat(ghostBLUE.colors);
 
     let program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
@@ -232,9 +110,13 @@ const render = () => {
 
     shift += speed;
 
-    if (shift > 30) {
-        shift = -30;
+    if (count % 15 == 0) {
+        count = 0;
+        mouth_open = !mouth_open;
     }
 
-    window.requestAnimationFrame(render);
+    count += 1;
+
+    if (shift > 110) shift = -33;
+    else window.requestAnimationFrame(render);
 };
