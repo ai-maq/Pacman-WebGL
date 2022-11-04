@@ -7,8 +7,8 @@ let shift = -33; // initial shift of pacman
 let mouth_open = true; // is pacman mouth open
 let count = 0; // counter for mouth opening
 
-const speed = 0.25; // speed of pacman
-const delta = 0.04; // distance between two points
+const speed = 0.5; // speed of pacman
+const DELTA = 0.04; // distance between two points
 const RED = vec4(1.0, 0.0, 0.0, 1.0); // red color
 const GREEN = vec4(0.0, 1.0, 0.0, 1.0); // green color
 const BLUE = vec4(0.0, 0.0, 1.0, 1.0); // blue color
@@ -20,7 +20,7 @@ window.onload = () => {
     if (!gl) alert("WebGL 2.0 isn't available");
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.0923341336686, 0.0923009263738, 0.0923433085636, 1.0);
 
     render();
 };
@@ -33,11 +33,9 @@ window.onload = () => {
  * @returns {Array} array of points
  */
 const strech = (xmin, xmax, y) => {
-    let result = [];
-    for (var i = xmin; i <= xmax; ++i) {
-        result.push(vec2(i, y));
-    }
-    return result;
+    return Array.from({ length: xmax - xmin + 1 }, (v, i) => {
+        return vec2(i + xmin, y);
+    });
 };
 
 /**
@@ -79,10 +77,6 @@ const render = () => {
     vertices = vertices.concat(ghostGREEN.vertices);
     vertices = vertices.concat(ghostBLUE.vertices);
 
-    vertices = vertices.map((v) => {
-        return vec2(v[0] * delta, v[1] * delta);
-    });
-
     colors = colors.concat(pacman.colors);
     colors = colors.concat(ghostRED.colors);
     colors = colors.concat(ghostGREEN.colors);
@@ -104,6 +98,9 @@ const render = () => {
     let vColor = gl.getAttribLocation(program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
+
+    let delta = gl.getUniformLocation(program, "delta");
+    gl.uniform1f(delta, DELTA);
 
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, vertices.length);
